@@ -6,4 +6,77 @@
         3. Si el nivel de alcohol por litro de sangre supera 1,2 gramos se aplicará multa de tres salarios, la suspensión de la licencia por 60 días y 30 días de cárcel.\n\n
         Para los conductores de vehículos de transporte público liviano o pesado, comercial o de carga, la tolerancia al consumo de drogas es cero y un nivel máximo de alcohol de 0,1 gramos por cada litro de sangre. En caso de exceder dicho límite, la sanción para el responsable será pérdida de 30 puntos en su licencia y cárcel de 90 días.\n Además, en todos estos casos, como medida preventiva se aprehenderá el vehículo por 24 horas. También será sancionado con detención de tres días, multa de un salario básico y reducción de 10 puntos en su licencia de conducir por lo siguiente: 1. Si la persona que conduzca sin haber obtenido licencia. 2. Si el conductor que falte de obra a la autoridad o agente de tránsito. El conductor que con un vehículo automotor, exceda los límites de velocidad fuera del rango moderado. En el primer caso, no se aplicará la reducción de puntos. El vehículo solo será devuelto cuando se cancele el valor de la multa correspondiente y la persona propietaria del vehículo será solidariamente responsable del pago de esta multa. En tanto, será sancionado con dos salarios básicos la reducción de 10 puntos en su licencia de conducir y retención del vehículo por el plazo mínimo de siete días por lo siguiente: 1.- La persona que conduzca un vehículo con una licencia de categoría diferente a la exigible para el tipo de vehículo que conduce. 2. Las personas que participen con vehículos a motor en competencias en la vía pública.
 </string>
+    <string name="title_activity_settings">Settings</string>
+
+    <!-- Strings related to Settings -->
+
+    <!-- Example General settings -->
+    <string name="pref_header_general">General</string>
+
+    <string name="pref_title_social_recommendations">Enable social recommendations</string>
+    <string name="pref_description_social_recommendations">Recommendations for people to contact
+        based on your message history
+    </string>
+
+    <string name="pref_title_display_name">Display name</string>
+    <string name="pref_default_display_name">John Smith</string>
+
+    <string name="pref_title_add_friends_to_messages">Add friends to messages</string>
+    <string-array name="pref_example_list_titles">
+        <item>Always</item>
+        <item>When possible</item>
+        <item>Never</item>
+    </string-array>
+    <string-array name="pref_example_list_values">
+        <item>1</item>
+        <item>0</item>
+        <item>-1</item>
+    </string-array>
+
+    <!-- Example settings for Data & Sync -->
+    <string name="pref_header_data_sync">Data &amp; sync</string>
+
+    <string name="pref_title_sync_frequency">Sync frequency</string>
+    <string-array name="pref_sync_frequency_titles">
+        <item>15 minutes</item>
+        <item>30 minutes</item>
+        <item>1 hour</item>
+        <item>3 hours</item>
+        <item>6 hours</item>
+        <item>Never</item>
+    </string-array>
+    <string-array name="pref_sync_frequency_values">
+        <item>15</item>
+        <item>30</item>
+        <item>60</item>
+        <item>180</item>
+        <item>360</item>
+        <item>-1</item>
+    </string-array>
+
+    <string-array name="list_preference_entries">
+        <item>Entry 1</item>
+        <item>Entry 2</item>
+        <item>Entry 3</item>
+    </string-array>
+
+    <string-array name="list_preference_entry_values">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+
+    <string-array name="multi_select_list_preference_default_value" />
+
+    <string name="pref_title_system_sync_settings">System sync settings</string>
+
+    <!-- Example settings for Notifications -->
+    <string name="pref_header_notifications">Notifications</string>
+
+    <string name="pref_title_new_message_notifications">New message notifications</string>
+
+    <string name="pref_title_ringtone">Ringtone</string>
+    <string name="pref_ringtone_silent">Silent</string>
+
+    <string name="pref_title_vibrate">Vibrate</string>
 </resources>

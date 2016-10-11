@@ -11,7 +11,11 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import com.mikhaellopez.circularfillableloaders.CircularFillableLoaders;
 
 import java.lang.ref.WeakReference;
 import java.util.Set;
@@ -20,6 +24,7 @@ public class MainActivity extends AppCompatActivity {
     /*
         * Notifications from UsbService will be received here.
         */
+
     private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -42,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
+    private double val;
     private UsbService usbService;
     private MyHandler mHandler;
     private final ServiceConnection usbConnection = new ServiceConnection() {
@@ -56,14 +62,22 @@ public class MainActivity extends AppCompatActivity {
             usbService = null;
         }
     };
+    private TextView metertxt;
+    private ImageView m1, m2, m3, m4;
+    private CircularFillableLoaders meter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mHandler = new MyHandler(this);
-
-
+        meter = (CircularFillableLoaders) findViewById(R.id.circularFillableLoaders);
+        meter.setProgress(90);
+        metertxt = (TextView) findViewById(R.id.level_txt);
+        m1 = (ImageView) findViewById(R.id.imageView);
+        m2 = (ImageView) findViewById(R.id.imageView2);
+        m3 = (ImageView) findViewById(R.id.imageView3);
+        m4 = (ImageView) findViewById(R.id.imageView4);
     }
 
 
@@ -108,7 +122,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void display(String data) {
+        val = Double.parseDouble(data.substring(0, data.length() - 3));
+        metertxt.setText(data);
+        meter.setProgress((int) ((val * 10) / 8.4));
 
+        if (val < 0.3) {
+
+        } else if (val < 1.4) {
+
+        } else if (val > 2.1) {
+
+        }
     }
 
     /*
