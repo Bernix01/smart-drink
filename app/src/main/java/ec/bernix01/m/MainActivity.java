@@ -10,7 +10,11 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -47,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
-    private double val;
+    private double val = 0.0d;
     private UsbService usbService;
     private MyHandler mHandler;
     private final ServiceConnection usbConnection = new ServiceConnection() {
@@ -72,12 +76,31 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         mHandler = new MyHandler(this);
         meter = (CircularFillableLoaders) findViewById(R.id.circularFillableLoaders);
-        meter.setProgress(90);
+        meter.setProgress(50);
         metertxt = (TextView) findViewById(R.id.level_txt);
+        Button b1 = (Button) findViewById(R.id.button2);
+        b1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                val = 0.0d;
+            }
+        });
         m1 = (ImageView) findViewById(R.id.imageView);
         m2 = (ImageView) findViewById(R.id.imageView2);
         m3 = (ImageView) findViewById(R.id.imageView3);
+        m3.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(getApplicationContext(), CallMeATaxiActivity.class));
+            }
+        });
         m4 = (ImageView) findViewById(R.id.imageView4);
+        m4.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(getApplicationContext(), InfoActivity.class));
+            }
+        });
     }
 
 
@@ -122,16 +145,35 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void display(String data) {
-        val = Double.parseDouble(data.substring(0, data.length() - 3));
+        String mg_L = data.substring(0, data.length() - 4);
+        Log.i("md_L", mg_L);
+        double tmpval = Double.parseDouble(mg_L);
+        if (tmpval < val)
+            return;
+        val = tmpval;
         metertxt.setText(data);
-        meter.setProgress((int) ((val * 10) / 8.4));
+        int progress = 100 - (int) ((val / 1.5) * 100);
+        Log.i("progress", (val / 1.5) * 100 + "  " + progress);
+        meter.setProgress(progress);
 
         if (val < 0.3) {
-
-        } else if (val < 1.4) {
-
-        } else if (val > 2.1) {
-
+            meter.setColor(ContextCompat.getColor(getApplicationContext(), R.color.colorGood));
+            meter.setAmplitudeRatio(0.02f);
+            m1.setVisibility(View.GONE);
+            m2.setVisibility(View.GONE);
+            m3.setVisibility(View.VISIBLE);
+        } else if (val < 0.8) {
+            meter.setColor(ContextCompat.getColor(getApplicationContext(), R.color.colorWarning));
+            meter.setAmplitudeRatio(0.04f);
+            m1.setVisibility(View.GONE);
+            m2.setVisibility(View.VISIBLE);
+            m3.setVisibility(View.GONE);
+        } else if (val > 1.2) {
+            meter.setColor(ContextCompat.getColor(getApplicationContext(), R.color.colorDanger));
+            meter.setAmplitudeRatio(0.06f);
+            m1.setVisibility(View.VISIBLE);
+            m2.setVisibility(View.VISIBLE);
+            m3.setVisibility(View.GONE);
         }
     }
 

@@ -17,10 +17,10 @@
         </activity>
         <activity
             android:name=".InfoActivity"
-            android:label="Información"></activity>
+            android:label="Información" />
         <activity
-            android:name=".SettingsActivity"
-            android:label="@string/title_activity_settings"></activity>
+            android:name=".CallMeATaxiActivity"
+            android:label="LLamar a un taxi"></activity>
     </application>
 
 </manifest>
