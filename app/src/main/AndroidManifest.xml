@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ec.bernix01.m">
 
+    <uses-feature
+        android:name="android.hardware.usb.host"
+        android:required="true" />
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -20,7 +23,11 @@
             android:label="Información" />
         <activity
             android:name=".CallMeATaxiActivity"
-            android:label="LLamar a un taxi"></activity>
+            android:label="LLamar a un taxi" />
+
+        <service
+            android:name="ec.bernix01.m.UsbService"
+            android:enabled="true" />
     </application>
 
 </manifest>

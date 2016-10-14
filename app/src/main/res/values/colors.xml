@@ -6,4 +6,5 @@
     <color name="colorGood">#4CAF50</color>
     <color name="colorWarning">#FFEB3B</color>
     <color name="colorDanger">#f44336</color>
+    <color name="colorquefalta">#FFA500</color>
 </resources>

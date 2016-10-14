@@ -29,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
         * Notifications from UsbService will be received here.
         */
 
+    static StringBuilder data = new StringBuilder();
     private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -67,7 +68,9 @@ public class MainActivity extends AppCompatActivity {
         }
     };
     private TextView metertxt;
-    private ImageView m1, m2, m3, m4;
+    private ImageView m1;
+    private ImageView m2;
+    private ImageView m3;
     private CircularFillableLoaders meter;
 
     @Override
@@ -82,25 +85,34 @@ public class MainActivity extends AppCompatActivity {
         b1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                val = 0.0d;
+                val = 0;
+                display("0.0mg/L");
             }
         });
         m1 = (ImageView) findViewById(R.id.imageView);
         m2 = (ImageView) findViewById(R.id.imageView2);
         m3 = (ImageView) findViewById(R.id.imageView3);
-        m3.setOnClickListener(new View.OnClickListener() {
+        m2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(getApplicationContext(), CallMeATaxiActivity.class));
             }
         });
-        m4 = (ImageView) findViewById(R.id.imageView4);
+        ImageView m4 = (ImageView) findViewById(R.id.imageView4);
         m4.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(getApplicationContext(), InfoActivity.class));
             }
         });
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                //Do something after 100ms
+                display("0.9mg/L");
+            }
+        }, 100);
     }
 
 
@@ -145,13 +157,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void display(String data) {
+        Log.i("loooool", data);
+        if (data.length() < 5)
+            return;
         String mg_L = data.substring(0, data.length() - 4);
         Log.i("md_L", mg_L);
         double tmpval = Double.parseDouble(mg_L);
         if (tmpval < val)
             return;
         val = tmpval;
-        metertxt.setText(data);
+        metertxt.setText(data.substring(0, data.length() - 4));
         int progress = 100 - (int) ((val / 1.5) * 100);
         Log.i("progress", (val / 1.5) * 100 + "  " + progress);
         meter.setProgress(progress);
@@ -162,13 +177,19 @@ public class MainActivity extends AppCompatActivity {
             m1.setVisibility(View.GONE);
             m2.setVisibility(View.GONE);
             m3.setVisibility(View.VISIBLE);
-        } else if (val < 0.8) {
+        } else if (val >= 0.3 && val < 0.8) {
             meter.setColor(ContextCompat.getColor(getApplicationContext(), R.color.colorWarning));
-            meter.setAmplitudeRatio(0.04f);
-            m1.setVisibility(View.GONE);
+            meter.setAmplitudeRatio(0.02f);
+            m1.setVisibility(View.VISIBLE);
             m2.setVisibility(View.VISIBLE);
             m3.setVisibility(View.GONE);
-        } else if (val > 1.2) {
+        } else if (val >= 0.8 && val < 1.2) {
+            meter.setColor(ContextCompat.getColor(getApplicationContext(), R.color.colorquefalta));
+            meter.setAmplitudeRatio(0.04f);
+            m1.setVisibility(View.VISIBLE);
+            m2.setVisibility(View.VISIBLE);
+            m3.setVisibility(View.GONE);
+        } else if (val >= 1.2) {
             meter.setColor(ContextCompat.getColor(getApplicationContext(), R.color.colorDanger));
             meter.setAmplitudeRatio(0.06f);
             m1.setVisibility(View.VISIBLE);
@@ -183,7 +204,7 @@ public class MainActivity extends AppCompatActivity {
     private static class MyHandler extends Handler {
         private final WeakReference<MainActivity> mActivity;
 
-        MyHandler(MainActivity activity) {
+        public MyHandler(MainActivity activity) {
             mActivity = new WeakReference<>(activity);
         }
 
@@ -191,8 +212,25 @@ public class MainActivity extends AppCompatActivity {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case UsbService.MESSAGE_FROM_SERIAL_PORT:
-                    String data = (String) msg.obj;
-                    mActivity.get().display(data);
+                    String s = msg.obj.toString();
+                    if (s.length() > 1) {
+                        char a[] = s.toCharArray();
+                        for (int i = 0; i < s.length(); i++) {
+
+                            Log.e("message", s + "  " + String.valueOf(s.equals("|")));
+                            if (a[i] == '|') {
+                                mActivity.get().display(data.toString());
+                                data = new StringBuilder();
+                            } else
+                                data.append(a[i]);
+                        }
+                    } else {
+                        if (s.equals("|")) {
+                            mActivity.get().display(data.toString());
+                            data = new StringBuilder();
+                        } else
+                            data.append(s);
+                    }
                     break;
                 case UsbService.CTS_CHANGE:
                     Toast.makeText(mActivity.get(), "CTS_CHANGE", Toast.LENGTH_LONG).show();
