@@ -110,7 +110,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 //Do something after 100ms
-                display("0.9mg/L");
+                display("2.9mg/L");
             }
         }, 100);
     }
@@ -167,34 +167,50 @@ public class MainActivity extends AppCompatActivity {
             return;
         val = tmpval;
         metertxt.setText(data.substring(0, data.length() - 4));
-        int progress = 100 - (int) ((val / 1.5) * 100);
-        Log.i("progress", (val / 1.5) * 100 + "  " + progress);
+        int progress = 100 - (int) ((val / 3.1) * 100);
+        Log.i("progress", (val / 3.1) * 100 + "  " + progress);
         meter.setProgress(progress);
-
         if (val < 0.3) {
             meter.setColor(ContextCompat.getColor(getApplicationContext(), R.color.colorGood));
             meter.setAmplitudeRatio(0.02f);
             m1.setVisibility(View.GONE);
             m2.setVisibility(View.GONE);
             m3.setVisibility(View.VISIBLE);
+            meter.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.cocktail));
+
+            metertxt.setTextColor(ContextCompat.getColor(getApplicationContext(), android.R.color.black));
         } else if (val >= 0.3 && val < 0.8) {
             meter.setColor(ContextCompat.getColor(getApplicationContext(), R.color.colorWarning));
             meter.setAmplitudeRatio(0.02f);
             m1.setVisibility(View.VISIBLE);
             m2.setVisibility(View.VISIBLE);
             m3.setVisibility(View.GONE);
+            meter.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.cocktail));
+            metertxt.setTextColor(ContextCompat.getColor(getApplicationContext(), R.color.colorx_x));
         } else if (val >= 0.8 && val < 1.2) {
             meter.setColor(ContextCompat.getColor(getApplicationContext(), R.color.colorquefalta));
             meter.setAmplitudeRatio(0.04f);
             m1.setVisibility(View.VISIBLE);
             m2.setVisibility(View.VISIBLE);
             m3.setVisibility(View.GONE);
-        } else if (val >= 1.2) {
+            meter.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.cocktail));
+            metertxt.setTextColor(ContextCompat.getColor(getApplicationContext(), android.R.color.white));
+        } else if (val >= 1.2 && val < 2.6) {
             meter.setColor(ContextCompat.getColor(getApplicationContext(), R.color.colorDanger));
             meter.setAmplitudeRatio(0.06f);
             m1.setVisibility(View.VISIBLE);
             m2.setVisibility(View.VISIBLE);
             m3.setVisibility(View.GONE);
+            metertxt.setTextColor(ContextCompat.getColor(getApplicationContext(), android.R.color.white));
+            meter.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.cocktail));
+        } else if (val > 2.5) {
+            meter.setProgress(90);
+            meter.setColor(ContextCompat.getColor(getApplicationContext(), R.color.colorx_x));
+            m1.setVisibility(View.VISIBLE);
+            m2.setVisibility(View.VISIBLE);
+            m3.setVisibility(View.GONE);
+            meter.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.skull));
+
         }
     }
 
