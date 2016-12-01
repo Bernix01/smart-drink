@@ -2,9 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ec.bernix01.m">
 
-    <uses-feature
-        android:name="android.hardware.usb.host"
-        android:required="true" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -26,8 +26,18 @@
             android:label="LLamar a un taxi" />
 
         <service
-            android:name="ec.bernix01.m.UsbService"
+            android:name=".UsbService"
             android:enabled="true" />
+
+        <activity
+            android:name=".DevicesActivity"
+            android:label="@string/title_activity_devices"
+            android:screenOrientation="landscape"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".MainActivity" /></activity>
     </application>
 
 </manifest>

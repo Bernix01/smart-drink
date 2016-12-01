@@ -1,5 +1,8 @@
 package ec.bernix01.m;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -10,12 +13,15 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -29,55 +35,71 @@ public class MainActivity extends AppCompatActivity {
         * Notifications from UsbService will be received here.
         */
 
-    static StringBuilder data = new StringBuilder();
-    private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
+    private Toolbar toolbar;
+
+    public static final int REQUEST_ENABLE_BT = 12;
+    private final static String TAG = MainActivity.class.getCanonicalName();
+    private RelativeLayout root;
+    private final Handler mHandler = new Handler() {
+
+
         @Override
-        public void onReceive(Context context, Intent intent) {
-            switch (intent.getAction()) {
-                case UsbService.ACTION_USB_PERMISSION_GRANTED: // USB PERMISSION GRANTED
-                    Toast.makeText(context, "USB Ready", Toast.LENGTH_SHORT).show();
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case BTThread.MESSAGE_WRITE:
+                    Log.i(TAG, "wrote some bytes...");
                     break;
-                case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED: // USB PERMISSION NOT GRANTED
-                    Toast.makeText(context, "USB Permission not granted", Toast.LENGTH_SHORT).show();
+                case BTThread.MESSAGE_READ:
+                    String readMessage = (String) msg.obj;
+                    Log.i(TAG, "received some bytes... " + readMessage);
+                    display(readMessage);
+
                     break;
-                case UsbService.ACTION_NO_USB: // NO USB CONNECTED
-                    Toast.makeText(context, "No USB connected", Toast.LENGTH_SHORT).show();
+                case BTThread.MESSAGE_DEVICE_NAME:
+                    // save the connected device's name
+                    toolbar.setTitle(msg.getData().getString(BTThread.DEVICE_NAME));
+                    toolbar.setSubtitle(msg.getData().getString(BTThread.DEVICE_ADDRESS));
+                    invalidateOptionsMenu();
                     break;
-                case UsbService.ACTION_USB_DISCONNECTED: // USB DISCONNECTED
-                    Toast.makeText(context, "USB disconnected", Toast.LENGTH_SHORT).show();
+                case BTThread.MESSAGE_SNACK:
+                    String msgstr = msg.getData().getString(BTThread.SNACK);
+                    if(msgstr != null)
+                        Snackbar.make(root, msgstr,
+                                Snackbar.LENGTH_SHORT).show();
                     break;
-                case UsbService.ACTION_USB_NOT_SUPPORTED: // USB NOT SUPPORTED
-                    Toast.makeText(context, "USB device not supported", Toast.LENGTH_SHORT).show();
+                case BTThread.MESSAGE_DISCONNECTED:
+                    Snackbar.make(root,"Disconnected",Snackbar.LENGTH_SHORT).show();
+                    toolbar.setTitle(getString(R.string.title_not_connected));
                     break;
             }
         }
     };
+    private BluetoothAdapter bt;
+    private BluetoothSocket socket;
+    private BTThread btThread;
+    private String deviceAddr;
     private double val = 0.0d;
-    private UsbService usbService;
-    private MyHandler mHandler;
-    private final ServiceConnection usbConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName arg0, IBinder arg1) {
-            usbService = ((UsbService.UsbBinder) arg1).getService();
-            usbService.setHandler(mHandler);
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName arg0) {
-            usbService = null;
-        }
-    };
     private TextView metertxt;
     private ImageView m1;
     private ImageView m2;
     private ImageView m3;
     private CircularFillableLoaders meter;
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
+                btThread = null;
+                invalidateOptionsMenu();
+                toolbar.setTitle(getResources().getString(R.string.title_not_connected));
+                toolbar.setSubtitle(null);
+            }
 
+        }
+    };
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mHandler = new MyHandler(this);
         meter = (CircularFillableLoaders) findViewById(R.id.circularFillableLoaders);
         meter.setProgress(50);
         metertxt = (TextView) findViewById(R.id.level_txt);
@@ -113,21 +135,29 @@ public class MainActivity extends AppCompatActivity {
                 display("0.9mg/L");
             }
         }, 100);
+        bt = BluetoothAdapter.getDefaultAdapter();
+        if (bt == null) {
+            Snackbar.make(root, "Why are you using this if you don't even have a bluetooth adapter?", Snackbar.LENGTH_INDEFINITE).show();
+        } else {
+            if (!bt.isEnabled()) {
+                requestBluetoothEnalbed();
+            }
+        }
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+        registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy, done :)
+    }
+    private void requestBluetoothEnalbed() {
+        Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+        startActivityForResult(enableBtIntent, MainActivity.REQUEST_ENABLE_BT);
     }
 
 
     @Override
-    public void onResume() {
-        super.onResume();
-        setFilters();  // Start listening notifications from UsbService
-        startService(UsbService.class, usbConnection, null); // Start UsbService(if it was not started before) and Bind it
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        unregisterReceiver(mUsbReceiver);
-        unbindService(usbConnection);
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(mReceiver);
+        if (btThread != null)
+            btThread.cancel();
     }
 
     private void startService(Class<?> service, ServiceConnection serviceConnection, Bundle extras) {
@@ -146,15 +176,7 @@ public class MainActivity extends AppCompatActivity {
         bindService(bindingIntent, serviceConnection, Context.BIND_AUTO_CREATE);
     }
 
-    private void setFilters() {
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(UsbService.ACTION_USB_PERMISSION_GRANTED);
-        filter.addAction(UsbService.ACTION_NO_USB);
-        filter.addAction(UsbService.ACTION_USB_DISCONNECTED);
-        filter.addAction(UsbService.ACTION_USB_NOT_SUPPORTED);
-        filter.addAction(UsbService.ACTION_USB_PERMISSION_NOT_GRANTED);
-        registerReceiver(mUsbReceiver, filter);
-    }
+
 
     private void display(String data) {
         Log.i("loooool", data);
@@ -198,48 +220,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /*
-     * This handler will be passed to UsbService. Data received from serial port is displayed through this handler
-     */
-    private static class MyHandler extends Handler {
-        private final WeakReference<MainActivity> mActivity;
-
-        public MyHandler(MainActivity activity) {
-            mActivity = new WeakReference<>(activity);
-        }
-
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case UsbService.MESSAGE_FROM_SERIAL_PORT:
-                    String s = msg.obj.toString();
-                    if (s.length() > 1) {
-                        char a[] = s.toCharArray();
-                        for (int i = 0; i < s.length(); i++) {
-
-                            Log.e("message", s + "  " + String.valueOf(s.equals("|")));
-                            if (a[i] == '|') {
-                                mActivity.get().display(data.toString());
-                                data = new StringBuilder();
-                            } else
-                                data.append(a[i]);
-                        }
-                    } else {
-                        if (s.equals("|")) {
-                            mActivity.get().display(data.toString());
-                            data = new StringBuilder();
-                        } else
-                            data.append(s);
-                    }
-                    break;
-                case UsbService.CTS_CHANGE:
-                    Toast.makeText(mActivity.get(), "CTS_CHANGE", Toast.LENGTH_LONG).show();
-                    break;
-                case UsbService.DSR_CHANGE:
-                    Toast.makeText(mActivity.get(), "DSR_CHANGE", Toast.LENGTH_LONG).show();
-                    break;
-            }
-        }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        this.getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_FULLSCREEN);
     }
+
+
 
 }

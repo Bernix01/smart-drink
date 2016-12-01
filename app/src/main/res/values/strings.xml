@@ -86,4 +86,14 @@
     <string name="pref_ringtone_silent">Silent</string>
 
     <string name="pref_title_vibrate">Vibrate</string>
+    <string name="title_activity_devices">DevicesActivity</string>
+
+    <string name="txt_pairedDevices">Paired devices</string>
+    <string name="txt_availableDevices">Available</string>
+    <string name="action_search_devices">Search</string>
+    <string name="title_connecting">Connecting</string>
+    <string name="title_not_connected">Not connected</string>
+    <string name="title_connected">Connected</string>
+    <string name="action_disconnect">Disconnect</string>
+    <string name="title_select_device">Please select a device</string>
 </resources>
