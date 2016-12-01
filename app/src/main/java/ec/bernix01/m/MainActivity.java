@@ -18,28 +18,35 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.mikhaellopez.circularfillableloaders.CircularFillableLoaders;
 
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.Set;
+import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
     /*
         * Notifications from UsbService will be received here.
         */
 
-    private Toolbar toolbar;
+    //private Toolbar toolbar;
+    public static final int LOCATION_BECAUSE_MARSHMALLOWS_FUCKING_NEEDS_IT = 42;
 
+    public static final int REQUEST_GET_DEVICE = 24;
     public static final int REQUEST_ENABLE_BT = 12;
-    private final static String TAG = MainActivity.class.getCanonicalName();
-    private RelativeLayout root;
+    public final static String TAG = MainActivity.class.getCanonicalName();
+    private ScrollView root;
     private final Handler mHandler = new Handler() {
 
 
@@ -57,8 +64,8 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case BTThread.MESSAGE_DEVICE_NAME:
                     // save the connected device's name
-                    toolbar.setTitle(msg.getData().getString(BTThread.DEVICE_NAME));
-                    toolbar.setSubtitle(msg.getData().getString(BTThread.DEVICE_ADDRESS));
+                    //toolbar.setTitle(msg.getData().getString(BTThread.DEVICE_NAME));
+                    //toolbar.setSubtitle(msg.getData().getString(BTThread.DEVICE_ADDRESS));
                     invalidateOptionsMenu();
                     break;
                 case BTThread.MESSAGE_SNACK:
@@ -69,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case BTThread.MESSAGE_DISCONNECTED:
                     Snackbar.make(root,"Disconnected",Snackbar.LENGTH_SHORT).show();
-                    toolbar.setTitle(getString(R.string.title_not_connected));
+                    //toolbar.setTitle(getString(R.string.title_not_connected));
                     break;
             }
         }
@@ -90,8 +97,8 @@ public class MainActivity extends AppCompatActivity {
             if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
                 btThread = null;
                 invalidateOptionsMenu();
-                toolbar.setTitle(getResources().getString(R.string.title_not_connected));
-                toolbar.setSubtitle(null);
+//                toolbar.setTitle(getResources().getString(R.string.title_not_connected));
+//                toolbar.setSubtitle(null);
             }
 
         }
@@ -135,6 +142,10 @@ public class MainActivity extends AppCompatActivity {
                 display("2.9mg/L");
             }
         }, 100);
+
+        root = (ScrollView) findViewById(R.id.root);
+
+        //toolbar = (Toolbar) findViewById(R.id.toolbar);
         bt = BluetoothAdapter.getDefaultAdapter();
         if (bt == null) {
             Snackbar.make(root, "Why are you using this if you don't even have a bluetooth adapter?", Snackbar.LENGTH_INDEFINITE).show();
@@ -158,6 +169,88 @@ public class MainActivity extends AppCompatActivity {
         unregisterReceiver(mReceiver);
         if (btThread != null)
             btThread.cancel();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == MainActivity.REQUEST_ENABLE_BT) {
+            if (resultCode == RESULT_CANCELED) {
+                Snackbar.make(root, "Without bluetooth this won't work. C'mon human...", Snackbar.LENGTH_INDEFINITE).setAction("enable", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        requestBluetoothEnalbed();
+                    }
+                }).show();
+            }
+        } else if (requestCode == MainActivity.REQUEST_GET_DEVICE) {
+            if (resultCode == RESULT_OK)
+                deviceAddr = data.getStringExtra("dir");
+            else if(resultCode == RESULT_CANCELED)
+                return;
+            if (deviceAddr != null)
+                connect();
+            else
+                Snackbar.make(root, "Could not get a device address. Please try again.", Snackbar.LENGTH_SHORT).show();
+            invalidateOptionsMenu();
+        }
+    }
+    private void requestDeviceAddress() {
+        Intent getDevice = new Intent(getApplicationContext(), DevicesActivity.class);
+        startActivityForResult(getDevice, MainActivity.REQUEST_GET_DEVICE);
+    }
+
+    private void connect() {
+        try {
+            if (bt.isDiscovering())
+                bt.cancelDiscovery();
+            BluetoothDevice device = bt.getRemoteDevice(deviceAddr);
+            UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb"); //Standard //SerialPortService ID
+            socket = device.createRfcommSocketToServiceRecord(uuid);
+            socket.connect();
+            btThread = new BTThread(socket, mHandler);
+            btThread.start();
+        } catch (IOException e) {
+            Snackbar.make(root,"Could not connect '" + e.getLocalizedMessage() + "'",Snackbar.LENGTH_SHORT).show();
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+        switch (id) {
+            case R.id.action_connect:
+                requestDeviceAddress();
+                return true;
+            case R.id.action_disconnect:
+                disconnect();
+                return true;
+            case R.id.action_beep:
+                btThread.write("Beep!");
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+
+        }
+    }
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        super.onPrepareOptionsMenu(menu);
+        menu.getItem(0).setVisible(btThread == null);
+        menu.getItem(1).setVisible(btThread != null);
+        menu.getItem(2).setVisible(btThread != null);
+        return true;
+    }
+
+    private void disconnect() {
+        btThread.cancel();
+        btThread = null;
+        socket = null;
+        invalidateOptionsMenu();
     }
 
     private void startService(Class<?> service, ServiceConnection serviceConnection, Bundle extras) {
@@ -234,6 +327,13 @@ public class MainActivity extends AppCompatActivity {
             meter.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.skull));
 
         }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_joystick, menu);
+        return true;
     }
 
     @Override
